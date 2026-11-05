@@ -1,35 +1,35 @@
 {
  "markets": {
   "BTCUSD": {
-   "first": "2026-11-04",
+   "first": "2024-11-06",
    "last": "2026-11-05",
    "source": "binance",
-   "lastT": 1793866680
+   "lastT": 1793866740
   },
   "EURUSD": {
-   "first": "2026-11-04",
+   "first": "2024-11-06",
    "last": "2026-11-04",
    "source": "massive",
    "lastT": 1793836740
   },
   "GBPUSD": {
-   "first": "2026-11-04",
+   "first": "2024-11-06",
    "last": "2026-11-04",
    "source": "massive",
    "lastT": 1793836740
   },
   "USDJPY": {
-   "first": "2026-11-04",
+   "first": "2024-11-06",
    "last": "2026-11-04",
    "source": "massive",
    "lastT": 1793836740
   },
   "XAUUSD": {
-   "first": "2026-11-04",
+   "first": "2024-11-06",
    "last": "2026-11-04",
    "source": "massive",
    "lastT": 1793836740
   }
  },
- "updated": "2026-11-05T08:19:28.913Z"
+ "updated": "2026-11-05T08:47:20.751Z"
 }
