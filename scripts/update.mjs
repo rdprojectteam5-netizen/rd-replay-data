@@ -66,7 +66,7 @@ async function run() {
   const fromMs = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate()) - (DAYS - 1) * 86400000;
   const indexFile = path.join(ROOT, 'data', 'index.json');
   const index = fs.existsSync(indexFile) ? JSON.parse(fs.readFileSync(indexFile, 'utf8')) : { markets: {} };
-  let failed = 0;
+  let failed = 0; const touched = new Set();
   for (const mk of MARKETS) {
     if (mk.src === 'massive' && !KEY) { console.log(`skip ${mk.id}: no MASSIVE_API_KEY secret`); continue; }
     // Download in 30-day chunks so a long backfill keeps memory small.
@@ -82,6 +82,7 @@ async function run() {
         const m = readDay(file);
         for (const r of rows) m.set(r[0], r.map(String));
         const keys = [...m.keys()].sort((x, y) => x - y);
+        touched.add(mk.id + d.slice(0, 7));
         fs.mkdirSync(path.dirname(file), { recursive: true });
         fs.writeFileSync(file, 't,o,h,l,c,v\n' + keys.map((k) => m.get(k).join(',')).join('\n') + '\n');
         const info = index.markets[mk.id] || (index.markets[mk.id] = { first: d, last: d, source: mk.src });
@@ -89,6 +90,28 @@ async function run() {
         info.lastT = Math.max(info.lastT || 0, keys[keys.length - 1]);
       }
       console.log(`${mk.id} ${day(a / 1000)}..${day(b / 1000)}: ${bars.length} candles`);
+    }
+  }
+  // 15-minute candles per month (data/<MK>/m15/<YYYY-MM>.csv): built for months that changed or have no file yet.
+  for (const mk of MARKETS) {
+    const base = path.join(ROOT, 'data', mk.id);
+    if (!fs.existsSync(base)) continue;
+    const months = new Map();
+    for (const y of fs.readdirSync(base).filter((x) => /^\d{4}$/.test(x))) for (const f of fs.readdirSync(path.join(base, y))) { const m = f.slice(0, 7); if (!months.has(m)) months.set(m, []); months.get(m).push(path.join(base, y, f)); }
+    for (const [m, files] of months) {
+      const out = path.join(base, 'm15', `${m}.csv`);
+      if (fs.existsSync(out) && !touched.has(mk.id + m)) continue;
+      const rows = []; let cur = null;
+      for (const f of files.sort()) for (const line of fs.readFileSync(f, 'utf8').split('\n').slice(1)) {
+        if (!line) continue; const p = line.split(',').map(Number), k = p[0] - (p[0] % 900);
+        if (!cur || cur[0] !== k) { if (cur) rows.push(cur); cur = [k, p[1], p[2], p[3], p[4], p[5]]; }
+        else { if (p[2] > cur[2]) cur[2] = p[2]; if (p[3] < cur[3]) cur[3] = p[3]; cur[4] = p[4]; cur[5] = Math.round((cur[5] + p[5]) * 1000) / 1000; }
+      }
+      if (cur) rows.push(cur);
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      fs.writeFileSync(out, 't,o,h,l,c,v\n' + rows.map((r) => r.join(',')).join('\n') + '\n');
+      (index.markets[mk.id].months = index.markets[mk.id].months || []).includes(m) || index.markets[mk.id].months.push(m);
+      index.markets[mk.id].months.sort();
     }
   }
   index.updated = new Date().toISOString();
