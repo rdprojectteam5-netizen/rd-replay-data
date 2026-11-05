@@ -68,6 +68,8 @@ async function run() {
   const index = fs.existsSync(indexFile) ? JSON.parse(fs.readFileSync(indexFile, 'utf8')) : { markets: {} };
   let failed = 0; const touched = new Set();
   for (const mk of MARKETS) {
+    // Paused 5 Nov 2026: the Massive free plan is for individual use only, so its data must not be published.
+    if (mk.src === 'massive' && process.env.MASSIVE_ALLOWED !== '1') { console.log(`skip ${mk.id}: Massive data paused (licence)`); continue; }
     if (mk.src === 'massive' && !KEY) { console.log(`skip ${mk.id}: no MASSIVE_API_KEY secret`); continue; }
     // Download in 30-day chunks so a long backfill keeps memory small.
     for (let a = fromMs; a < now; a += 30 * 86400000) {
