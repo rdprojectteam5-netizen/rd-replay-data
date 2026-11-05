@@ -74,7 +74,7 @@ async function run() {
       const b = Math.min(now, a + 30 * 86400000 - 1);
       let bars;
       try { bars = mk.src === 'massive' ? await massive(mk.ticker, a, b) : await binance(mk.ticker, a, b); }
-      catch (e) { console.error(`${mk.id}: ${e.message}`); failed++; break; }
+      catch (e) { console.error(`${mk.id} ${day(a / 1000)}: ${e.message}`); failed++; continue; }
       const byDay = new Map();
       for (const r of bars) { const d = day(r[0]); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(r); }
       for (const [d, rows] of byDay) {
